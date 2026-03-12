@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="uz">
+  <head>
+    <meta name="google-site-verification" content="y7JjFwXjDZ5X2mrN5dDRLtNmG2LgrRxbpYbx4IhNN5Q" />
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.png" />
+    <title>eRepetitor — Repetitorlar va o‘quv markazlar uchun CRM tizimi</title>
+<meta name="description" content="eRepetitor yordamida o‘quvchilar, guruhlar, davomat va to‘lovlarni boshqaring." />
+<meta name="keywords" content="repetitor crm, o‘quv markaz tizimi, davomat tizimi, to‘lov nazorati" />
+<meta name="robots" content="index, follow" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#4f46e5" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="eRepetitor" />
+    <script>
+      (function() {
+        try {
+          var t = localStorage.getItem('theme');
+          if (t === 'dark' || (!t && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+            document.querySelector('meta[name="theme-color"]')?.setAttribute('content', '#1e293b');
+          }
+        } catch(e) {}
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
