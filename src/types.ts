@@ -86,9 +86,12 @@ export interface Student {
 
 export interface StudentPaymentThisMonth {
   id: number
+  studentId: number
   status: 'DUE' | 'PAID' | 'PARTIAL'
   amount: string
   paidAmount: string
+  remainingAmount?: string
+  remaining?: string | null
   paidAt: string | null
 }
 
@@ -112,9 +115,11 @@ export interface Payment {
   month: string
   amount: string
   paidAmount: string
+  remainingAmount?: string
   status: PaymentStatus
   paidAt: string | null
   createdAt: string
+  histories?: { amount: string; createdAt: string; note?: string | null }[]
   student: {
     id: number
     name: string

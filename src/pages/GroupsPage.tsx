@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Users, Plus, ChevronRight, BookOpen, Trash2 } from 'lucide-react'
+import { Users, Plus, ChevronRight, BookOpen, Trash2, Clock } from 'lucide-react'
 import api from '../lib/api'
 import { useToast } from '../components/ui/Toast'
 import { Button } from '../components/ui/Button'
@@ -16,26 +16,39 @@ const DAYS = [
   { value: 'sun', label: 'Yak' },
 ]
 
+const DAY_FULL: Record<string, string> = {
+  mon: 'Dushanba', tue: 'Seshanba', wed: 'Chorshanba',
+  thu: 'Payshanba', fri: 'Juma', sat: 'Shanba', sun: 'Yakshanba',
+}
+
 function GroupCard({ group, onDelete }: { group: Group; onDelete: (id: number) => void }) {
   return (
     <div className="card p-4 flex items-center gap-3 animate-fade-in">
-      <div className="w-11 h-11 rounded-xl bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center shrink-0">
-        <BookOpen size={20} className="text-indigo-600 dark:text-indigo-400" />
+      <div className="w-11 h-11 rounded-2xl bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center shrink-0">
+        <BookOpen size={19} className="text-indigo-600" />
       </div>
       <div className="flex-1 min-w-0">
         <p className="font-semibold text-[var(--text-primary)] truncate">{group.name}</p>
-        <div className="flex items-center gap-3 mt-0.5 text-xs text-[var(--text-secondary)]">
-          {group.subject && <span>{group.subject}</span>}
-          <span className="flex items-center gap-1">
+        <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+          {group.subject && (
+            <span className="text-xs text-[var(--text-secondary)] bg-[var(--bg-page)] px-2 py-0.5 rounded-full">
+              {group.subject}
+            </span>
+          )}
+          <span className="text-xs text-[var(--text-muted)] flex items-center gap-1">
             <Users size={11} />{group._count?.students ?? 0} o'quvchi
           </span>
-          {group.time && <span>{group.time}</span>}
+          {group.time && (
+            <span className="text-xs text-[var(--text-muted)] flex items-center gap-1">
+              <Clock size={11} />{group.time}
+            </span>
+          )}
         </div>
         {group.days?.length > 0 && (
           <div className="flex gap-1 mt-1.5 flex-wrap">
             {group.days.map(d => (
-              <span key={d} className="text-[10px] font-medium bg-[var(--bg-page)] text-[var(--text-secondary)] px-1.5 py-0.5 rounded-md uppercase border border-[var(--border-color)]">
-                {d}
+              <span key={d} className="text-[10px] font-semibold bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 px-1.5 py-0.5 rounded-md">
+                {DAYS.find(x => x.value === d)?.label || d}
               </span>
             ))}
           </div>
@@ -44,12 +57,15 @@ function GroupCard({ group, onDelete }: { group: Group; onDelete: (id: number) =
       <div className="flex items-center gap-1 shrink-0">
         <button
           onClick={() => onDelete(group.id)}
-          className="w-8 h-8 flex items-center justify-center rounded-lg text-[var(--text-muted)] hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-colors"
+          className="w-8 h-8 flex items-center justify-center rounded-xl text-[var(--text-muted)] hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-colors"
         >
-          <Trash2 size={16} />
+          <Trash2 size={15} />
         </button>
-        <Link to={`/groups/${group.id}`} className="w-8 h-8 flex items-center justify-center rounded-lg text-[var(--text-muted)] hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors">
-          <ChevronRight size={18} />
+        <Link
+          to={`/groups/${group.id}`}
+          className="w-8 h-8 flex items-center justify-center rounded-xl text-[var(--text-muted)] hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors"
+        >
+          <ChevronRight size={17} />
         </Link>
       </div>
     </div>
@@ -125,20 +141,24 @@ export default function GroupsPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-5">
         <div>
           <h1 className="page-title">Guruhlar</h1>
           <p className="page-subtitle">{groups.length} ta guruh</p>
         </div>
-        <Button size="sm" leftIcon={<Plus size={16} />} onClick={() => setShowCreate(true)}>Guruh</Button>
+        <Button size="sm" leftIcon={<Plus size={15} />} onClick={() => setShowCreate(true)}>
+          Yangi guruh
+        </Button>
       </div>
 
       {loading ? <SkeletonList count={4} /> : groups.length === 0 ? (
         <div className="text-center py-16">
-          <Users size={48} className="text-[var(--text-muted)] mx-auto mb-4" />
-          <p className="text-[var(--text-secondary)] font-medium">Guruhlar yo'q</p>
-          <p className="text-sm text-[var(--text-muted)] mt-1">Birinchi guruhingizni yarating</p>
-          <Button size="sm" leftIcon={<Plus size={16} />} className="mt-4" onClick={() => setShowCreate(true)}>
+          <div className="w-16 h-16 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] flex items-center justify-center mx-auto mb-4">
+            <Users size={28} className="text-[var(--text-muted)]" />
+          </div>
+          <p className="text-[var(--text-secondary)] font-semibold mb-1">Hali guruh yo'q</p>
+          <p className="text-sm text-[var(--text-muted)] mb-4">Birinchi guruhingizni yarating</p>
+          <Button size="sm" leftIcon={<Plus size={15} />} onClick={() => setShowCreate(true)}>
             Guruh yaratish
           </Button>
         </div>
@@ -148,21 +168,49 @@ export default function GroupsPage() {
         </div>
       )}
 
+      {/* Create modal */}
       <Modal open={showCreate} onClose={() => { setShowCreate(false); setFormErrors({}) }} title="Yangi guruh">
         <form onSubmit={handleCreate} className="space-y-4" noValidate>
-          <Input label="Guruh nomi" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} error={formErrors.name} placeholder="Masalan: 7-sinf ingliz tili" disabled={saving} />
-          <Input label="Fan (ixtiyoriy)" value={form.subject} onChange={e => setForm(f => ({ ...f, subject: e.target.value }))} placeholder="Masalan: Ingliz tili" disabled={saving} />
-          <Input label="Oylik to'lov (so'm)" type="number" value={form.monthlyPrice} onChange={e => setForm(f => ({ ...f, monthlyPrice: e.target.value }))} error={formErrors.monthlyPrice} placeholder="350000" disabled={saving} />
+          <Input
+            label="Guruh nomi *"
+            value={form.name}
+            onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+            error={formErrors.name}
+            placeholder="Masalan: 7-sinf ingliz tili"
+            disabled={saving}
+          />
+          <Input
+            label="Fan"
+            value={form.subject}
+            onChange={e => setForm(f => ({ ...f, subject: e.target.value }))}
+            placeholder="Masalan: Ingliz tili"
+            disabled={saving}
+          />
+          <Input
+            label="Oylik to'lov (so'm) *"
+            type="number"
+            value={form.monthlyPrice}
+            onChange={e => setForm(f => ({ ...f, monthlyPrice: e.target.value }))}
+            error={formErrors.monthlyPrice}
+            placeholder="350000"
+            disabled={saving}
+          />
           <div>
             <label className="text-sm font-semibold text-[var(--text-primary)] block mb-2">Dars kunlari</label>
-            <div className="flex gap-2 flex-wrap">
+            <div className="flex gap-1.5 flex-wrap">
               {DAYS.map(d => (
-                <button key={d.value} type="button" onClick={() => toggleDay(d.value)} disabled={saving}
-                  className={['px-3 py-1.5 rounded-lg text-sm font-medium border transition-all',
+                <button
+                  key={d.value}
+                  type="button"
+                  onClick={() => toggleDay(d.value)}
+                  disabled={saving}
+                  className={[
+                    'px-3 py-1.5 rounded-lg text-sm font-semibold border transition-all',
                     form.days.includes(d.value)
-                      ? 'bg-indigo-600 text-white border-indigo-600'
-                      : 'bg-[var(--bg-card)] text-[var(--text-secondary)] border-[var(--border-color)] hover:border-indigo-400',
-                  ].join(' ')}>
+                      ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
+                      : 'bg-[var(--bg-card)] text-[var(--text-secondary)] border-[var(--border-color)] hover:border-indigo-300',
+                  ].join(' ')}
+                >
                   {d.label}
                 </button>
               ))}
@@ -170,19 +218,22 @@ export default function GroupsPage() {
           </div>
           {form.days.length > 0 && (
             <div className="grid grid-cols-2 gap-3">
-              <Input label="Vaqt" type="time" value={form.time} onChange={e => setForm(f => ({ ...f, time: e.target.value }))} error={formErrors.time} disabled={saving} />
+              <Input label="Vaqt *" type="time" value={form.time} onChange={e => setForm(f => ({ ...f, time: e.target.value }))} error={formErrors.time} disabled={saving} />
               <Input label="Davomiyligi (min)" type="number" value={form.durationMin} onChange={e => setForm(f => ({ ...f, durationMin: e.target.value }))} placeholder="90" disabled={saving} />
             </div>
           )}
-          <div className="flex gap-3 pt-2">
+          <div className="flex gap-3 pt-1">
             <Button type="button" variant="secondary" fullWidth onClick={() => setShowCreate(false)} disabled={saving}>Bekor</Button>
             <Button type="submit" fullWidth loading={saving}>Yaratish</Button>
           </div>
         </form>
       </Modal>
 
+      {/* Delete confirm modal */}
       <Modal open={deleteId !== null} onClose={() => setDeleteId(null)} title="Guruhni o'chirish">
-        <p className="text-[var(--text-secondary)] text-sm mb-5">Guruhni rasman o'chirishdan oldin, unda mavjud faol o'quvchilarni boshqa guruhga ko'chirishingiz yoki guruhdan chiqarishingiz kerak bo'ladi. Davom etasizmi?</p>
+        <p className="text-[var(--text-secondary)] text-sm mb-5">
+          Bu guruhni o'chirishdan oldin, o'quvchilarni boshqa guruhga ko'chirishingiz kerak bo'ladi. Davom etasizmi?
+        </p>
         <div className="flex gap-3">
           <Button variant="secondary" fullWidth onClick={() => setDeleteId(null)}>Bekor</Button>
           <Button variant="danger" fullWidth onClick={() => deleteId && handleDelete(deleteId)}>O'chirish</Button>

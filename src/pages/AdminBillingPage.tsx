@@ -37,11 +37,13 @@ export default function AdminBillingPage() {
   const [rejectModal, setRejectModal] = useState<{ id: number; name: string } | null>(null)
   const [rejectReason, setRejectReason] = useState('')
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [statusFilter, setStatusFilter] = useState<string>('PENDING')
   const toast = useToast()
 
-  async function load() {
+  async function load(currentStatus = statusFilter) {
     try {
-      const res = await api.get('/api/billing/admin/pending')
+      const query = currentStatus === 'ALL' ? '' : `?status=${currentStatus}`
+      const res = await api.get(`/api/billing/admin/all${query}`)
       setItems(res.data.items || [])
     } catch (err: unknown) {
       const msg = (err as { message?: string })?.message
@@ -54,7 +56,7 @@ export default function AdminBillingPage() {
     }
   }
 
-  useEffect(() => { load() }, [])
+  useEffect(() => { load() }, [statusFilter])
 
   async function handleConfirm(id: number) {
     setProcessing(true)
@@ -97,8 +99,25 @@ export default function AdminBillingPage() {
         </div>
         <div>
           <h1 className="page-title">Admin · To'lovlar</h1>
-          <p className="page-subtitle">Ko'rib chiqish kutilayotgan to'lovlar</p>
+          <p className="page-subtitle">Platforma to'lovlarini tekshirish</p>
         </div>
+      </div>
+
+      <div className="flex border-b border-[var(--border-color)] overflow-x-auto no-scrollbar">
+        {[
+          { id: 'PENDING', label: 'Kutilmoqda' },
+          { id: 'CONFIRMED', label: 'Tasdiqlangan' },
+          { id: 'REJECTED', label: 'Rad etilgan' },
+          { id: 'ALL', label: 'Barchasi' },
+        ].map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => setStatusFilter(tab.id)}
+            className={`whitespace-nowrap pb-2 px-4 font-medium text-sm transition-colors ${statusFilter === tab.id ? 'border-b-2 border-indigo-600 text-indigo-700' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}
+          >
+            {tab.label}
+          </button>
+        ))}
       </div>
 
       {items.length === 0 ? (
@@ -109,65 +128,97 @@ export default function AdminBillingPage() {
         </div>
       ) : (
         <div className="space-y-3">
-          {items.map((p) => (
-            <div key={p.id} className="card p-4">
-              <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <User size={16} className="text-[var(--text-muted)] shrink-0" />
-                    <p className="font-semibold text-[var(--text-primary)]">{p.teacher.name}</p>
+          {items.map((p) => {
+            const isPending = p.status === 'PENDING'
+            const isConfirmed = p.status === 'CONFIRMED'
+            const isRejected = p.status === 'REJECTED'
+
+            return (
+              <div key={p.id} className="card p-4">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                  <div className="flex-1 min-w-0 md:grid md:grid-cols-4 md:gap-4 md:items-center">
+
+                    {/* Teacher & Status */}
+                    <div className="mb-2 md:mb-0">
+                      <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider mb-0.5">O'qituvchi</p>
+                      <div className="flex items-center gap-2">
+                        <p className="font-semibold text-[var(--text-primary)] truncate">{p.teacher.name}</p>
+                      </div>
+                      <p className="text-xs text-[var(--text-secondary)] truncate">{p.teacher.email}</p>
+                    </div>
+
+                    {/* Amount & Months */}
+                    <div className="mb-2 md:mb-0">
+                      <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider mb-0.5">Summa & Muddat</p>
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-bold text-[var(--text-primary)]">{formatMoney(p.amount)}</span>
+                        <span className="text-[var(--text-secondary)] text-sm">({p.months} oy)</span>
+                      </div>
+                    </div>
+
+                    {/* Status & Date */}
+                    <div className="mb-2 md:mb-0">
+                      <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider mb-0.5">Holat & Sana</p>
+                      <div className="flex flex-col items-start gap-1">
+                        {isPending && <span className="text-[10px] font-semibold bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full uppercase">Kutilmoqda</span>}
+                        {isConfirmed && <span className="text-[10px] font-semibold bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full uppercase">Tasdiqlangan</span>}
+                        {isRejected && <span className="text-[10px] font-semibold bg-rose-100 text-rose-700 px-2 py-0.5 rounded-full uppercase">Rad etilgan</span>}
+                        <span className="text-xs text-[var(--text-muted)]">{formatDate(p.createdAt)}</span>
+                      </div>
+                    </div>
+
+                    {/* Proof & Note */}
+                    <div className="mb-2 md:mb-0">
+                      <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider mb-0.5">Chek</p>
+                      {p.proofUrl ? (
+                        <Button variant="secondary" size="sm" onClick={() => setPreviewUrl(getReceiptUrl(p.proofUrl))} className="text-indigo-600">
+                          Ko'rish
+                        </Button>
+                      ) : (
+                        <span className="text-xs text-[var(--text-muted)]">Yo'q</span>
+                      )}
+                      {p.note && <p className="text-xs text-[var(--text-secondary)] mt-1 max-w-[150px] truncate" title={p.note}>{p.note}</p>}
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
-                    <Mail size={14} />
-                    {p.teacher.email}
-                  </div>
-                  <div className="flex items-center gap-2 mt-2 text-sm">
-                    <Receipt size={14} className="text-indigo-500" />
-                    <span className="font-bold text-indigo-600">{formatMoney(p.amount)}</span>
-                    <span className="text-[var(--text-muted)]">· {p.months} oy</span>
-                  </div>
-                  <p className="text-xs text-[var(--text-muted)] mt-1 flex items-center gap-1">
-                    <Clock size={12} /> {formatDate(p.createdAt)}
-                  </p>
-                  {p.note && (
-                    <p className="text-xs text-[var(--text-secondary)] mt-2 bg-[var(--bg-page)] px-2 py-1 rounded">
-                      {p.note}
-                    </p>
-                  )}
-                </div>
-                <div className="flex flex-col gap-2 sm:flex-row shrink-0">
-                  {p.proofUrl && (
-                    <button
-                      onClick={() => setPreviewUrl(getReceiptUrl(p.proofUrl))}
-                      className="text-sm text-indigo-600 hover:underline text-left"
-                    >
-                      Chek ko'rish
-                    </button>
-                  )}
-                  <div className="flex gap-2">
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      leftIcon={<XCircle size={14} />}
-                      onClick={() => setRejectModal({ id: p.id, name: p.teacher.name })}
-                      disabled={processing}
-                    >
-                      Rad etish
-                    </Button>
-                    <Button
-                      size="sm"
-                      leftIcon={<CheckCircle2 size={14} />}
-                      onClick={() => handleConfirm(p.id)}
-                      disabled={!p.proofUrl || processing}
-                      title={!p.proofUrl ? "Chek yuklanmagan" : undefined}
-                    >
-                      Tasdiqlash
-                    </Button>
+
+                  <div className="flex flex-col gap-2 sm:flex-row items-start sm:items-center shrink-0 border-t sm:border-t-0 pt-3 sm:pt-0 sm:pl-4 sm:border-l border-[var(--border-color)]">
+                    {p.proofUrl && (
+                      <button
+                        onClick={() => setPreviewUrl(getReceiptUrl(p.proofUrl))}
+                        className="text-sm text-indigo-600 hover:underline text-left mr-2"
+                      >
+                        Chek ko'rish
+                      </button>
+                    )}
+                    {isPending && (
+                      <div className="flex gap-2 w-full sm:w-auto mt-2 sm:mt-0">
+                        <Button
+                          size="sm"
+                          leftIcon={<CheckCircle2 size={14} />}
+                          onClick={() => handleConfirm(p.id)}
+                          disabled={!p.proofUrl || processing}
+                          title={!p.proofUrl ? "Chek yuklanmagan" : undefined}
+                          className="flex-1 sm:flex-none border border-emerald-500 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 hover:text-emerald-800"
+                        >
+                          Approve
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          leftIcon={<XCircle size={14} />}
+                          onClick={() => setRejectModal({ id: p.id, name: p.teacher.name })}
+                          disabled={processing}
+                          className="flex-1 sm:flex-none border border-rose-500 bg-rose-50 text-rose-700 hover:bg-rose-100 hover:text-rose-800"
+                        >
+                          Reject
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
 

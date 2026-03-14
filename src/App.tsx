@@ -13,12 +13,14 @@ import DashboardPage from './pages/DashboardPage'
 import SchedulePage from './pages/SchedulePage'
 import GroupsPage from './pages/GroupsPage'
 import GroupDetailPage from './pages/GroupDetailPage'
-import PaymentsPage from "./pages/PaymentsPage"; import BillingPage from './pages/BillingPage'
+import PaymentsPage from './pages/PaymentsPage'
+import BillingPage from './pages/BillingPage'
 import ProfilePage from './pages/ProfilePage'
 import AdminBillingPage from './pages/AdminBillingPage'
 import AdminDashboardPage from './pages/AdminDashboardPage'
 import StudentHistoryPage from './pages/StudentHistoryPage'
 import DebtorsPage from './pages/DebtorsPage'
+import StudentsPage from './pages/StudentsPage'
 import HomePage from './pages/HomePage'
 
 export default function App() {
@@ -35,7 +37,7 @@ export default function App() {
               <Route path="/forgot-password" element={<PublicRoute><ForgotPasswordPage /></PublicRoute>} />
               <Route path="/reset-password" element={<PublicRoute><ResetPasswordPage /></PublicRoute>} />
 
-              {/* Landing / Home */}
+              {/* Landing */}
               <Route path="/" element={<HomePage />} />
 
               {/* Protected */}
@@ -44,9 +46,10 @@ export default function App() {
                 <Route path="/schedule" element={<SchedulePage />} />
                 <Route path="/groups" element={<GroupsPage />} />
                 <Route path="/groups/:id" element={<GroupDetailPage />} />
+                <Route path="/students" element={<StudentsPage />} />
+                <Route path="/students/:id/history" element={<StudentHistoryPage />} />
                 <Route path="/payments" element={<PaymentsPage />} />
                 <Route path="/debtors" element={<DebtorsPage />} />
-                <Route path="/students/:id/history" element={<StudentHistoryPage />} />
                 <Route path="/billing" element={<BillingPage />} />
                 <Route path="/profile" element={<ProfilePage />} />
                 <Route path="/admin" element={<AdminRoute><AdminDashboardPage /></AdminRoute>} />

@@ -6,6 +6,9 @@ import {
 } from 'lucide-react'
 import api from '../lib/api'
 import { useToast } from '../components/ui/Toast'
+import { Modal } from '../components/ui/Modal'
+import { Input } from '../components/ui/Input'
+import { Button } from '../components/ui/Button'
 import { SkeletonList } from '../components/ui/Skeleton'
 import { formatMoney, formatDate } from '../lib/date'
 import type { AttendanceStatus, PaymentStatus } from '../types'
@@ -24,10 +27,12 @@ interface PaymentRecord {
     month: string
     amount: string
     paidAmount: string
+    remainingAmount?: string
     remaining: string
     status: PaymentStatus
     paidAt: string | null
     createdAt: string
+    histories?: { amount: string; createdAt: string; note?: string | null }[]
 }
 
 interface AttendanceRecord {
@@ -111,19 +116,22 @@ export default function StudentHistoryPage() {
     const [data, setData] = useState<HistoryData | null>(null)
     const [loading, setLoading] = useState(true)
     const [tab, setTab] = useState<HistoryTab>('stats')
+    const [payModalOpen, setPayModalOpen] = useState(false)
+    const [payTarget, setPayTarget] = useState<PaymentRecord | null>(null)
+
+    async function load() {
+        try {
+            const res = await api.get(`/api/students/${id}/history`)
+            setData(res.data)
+        } catch (err: unknown) {
+            toast.error((err as { message?: string })?.message || "Yuklab bo'lmadi")
+            navigate(-1)
+        } finally {
+            setLoading(false)
+        }
+    }
 
     useEffect(() => {
-        async function load() {
-            try {
-                const res = await api.get(`/api/students/${id}/history`)
-                setData(res.data)
-            } catch (err: unknown) {
-                toast.error((err as { message?: string })?.message || "Yuklab bo'lmadi")
-                navigate(-1)
-            } finally {
-                setLoading(false)
-            }
-        }
         load()
     }, [id])
 
@@ -229,14 +237,29 @@ export default function StudentHistoryPage() {
                                             <p className="font-medium text-sm text-[var(--text-primary)]">{p.month}</p>
                                             {statusBadge(p.status)}
                                         </div>
-                                        <p className="text-xs text-[var(--text-muted)] mt-0.5">
-                                            {p.paidAt ? `To'langan: ${formatDate(p.paidAt)}` : formatDate(p.createdAt)}
-                                        </p>
+                                        <div className="grid grid-cols-3 gap-2 mt-2 max-w-sm">
+                                            <div>
+                                                <p className="text-[10px] text-[var(--text-muted)] uppercase">Jami</p>
+                                                <p className="text-xs font-semibold text-[var(--text-primary)]">{formatMoney(p.amount, '')}</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-[10px] text-[var(--text-muted)] uppercase">To'landi</p>
+                                                <p className="text-xs font-semibold text-emerald-600">{formatMoney(p.paidAmount, '')}</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-[10px] text-[var(--text-muted)] uppercase">Qoldi</p>
+                                                <p className={`text-xs font-bold ${Number(p.remainingAmount || p.remaining) > 0 ? 'text-rose-600' : 'text-emerald-600'}`}>{formatMoney(p.remainingAmount || p.remaining, '')}</p>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div className="text-right shrink-0">
-                                        <p className="text-sm font-semibold text-[var(--text-primary)]">{formatMoney(p.amount, '')}</p>
-                                        {Number(p.remaining) > 0 && (
-                                            <p className="text-[10px] text-rose-500 font-medium">Qoldiq: {formatMoney(p.remaining, '')}</p>
+                                    <div className="shrink-0">
+                                        {p.status !== 'PAID' && (
+                                            <button
+                                                onClick={() => setPayTarget(p)}
+                                                className="shrink-0 text-xs font-bold px-4 py-2 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 active:scale-95 transition-all shadow-sm"
+                                            >
+                                                {p.status === 'PARTIAL' ? 'Davom' : "To'lash"}
+                                            </button>
                                         )}
                                     </div>
                                 </div>
@@ -266,6 +289,66 @@ export default function StudentHistoryPage() {
                     )}
                 </div>
             )}
+
+            {/* Pay Modal */}
+            <Modal open={!!payTarget} onClose={() => setPayTarget(null)} title="To'lov qo'shish" size="sm">
+                {payTarget && (
+                    <div className="space-y-4">
+                        <div className="bg-[var(--bg-page)] rounded-xl p-3.5 space-y-2">
+                            <p className="font-bold text-[var(--text-primary)] text-sm">{student.name}</p>
+                            <div className="grid grid-cols-1 gap-1">
+                                <div className="flex justify-between text-xs">
+                                    <span className="text-[var(--text-muted)]">Umumiy summa (Jami):</span>
+                                    <span className="font-semibold text-[var(--text-primary)]">{formatMoney(payTarget.amount)}</span>
+                                </div>
+                                <div className="flex justify-between text-xs">
+                                    <span className="text-[var(--text-muted)]">To'langan miqdor:</span>
+                                    <span className="font-semibold text-emerald-600">{formatMoney(payTarget.paidAmount)}</span>
+                                </div>
+                                <div className="flex justify-between text-xs border-t border-[var(--border-color)] mt-1 pt-1">
+                                    <span className="font-bold text-[var(--text-secondary)]">Qolgan qarz (Qoldi):</span>
+                                    <span className={Number(payTarget.remainingAmount || payTarget.remaining) > 0 ? "font-bold text-rose-600" : "font-bold text-emerald-600"}>
+                                        {formatMoney(payTarget.remainingAmount || payTarget.remaining)}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        <Input
+                            label="Summa (so'm)"
+                            type="number"
+                            id="payAmountInput"
+                            autoFocus
+                            placeholder={payTarget.remaining}
+                        />
+                        <div className="flex gap-2">
+                            <button onClick={() => {
+                                const el = document.getElementById('payAmountInput') as HTMLInputElement;
+                                if (el) el.value = payTarget.remaining;
+                            }}
+                                className="flex-1 py-2 text-sm font-semibold border rounded-xl bg-[var(--bg-card)] border-[var(--border-color)] text-[var(--text-secondary)] hover:border-emerald-400 hover:text-emerald-600 transition-colors">
+                                To'liq
+                            </button>
+                        </div>
+                        <div className="flex gap-3">
+                            <Button variant="secondary" fullWidth onClick={() => setPayTarget(null)}>Bekor</Button>
+                            <Button fullWidth onClick={async () => {
+                                const el = document.getElementById('payAmountInput') as HTMLInputElement;
+                                const val = Number(el?.value || 0);
+                                if (!val || val <= 0) { toast.error('Summa kiriting'); return; }
+                                if (val > Number(payTarget.remaining)) { toast.error(`Maksimal: ${formatMoney(payTarget.remaining, '')}`); return; }
+                                try {
+                                    await api.patch(`/api/payments/${payTarget.id}/pay`, { payAmount: val });
+                                    toast.success("To'lov qabul qilindi!");
+                                    setPayTarget(null);
+                                    load();
+                                } catch (err: any) {
+                                    toast.error(err.message || 'Xatolik');
+                                }
+                            }}>To'lash</Button>
+                        </div>
+                    </div>
+                )}
+            </Modal>
         </div>
     )
 }
